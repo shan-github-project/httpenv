@@ -24,6 +24,24 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+          
+      - name: Build and export to Docker
+        uses: docker/build-push-action@v2
+        with:
+          push: false
+          load: true # Export to Docker Engine rather than pushing to a registry
+          tags: ${{ github.run_id }}
+          target: test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+      
+      - name: Run Trivy for all CVEs (non-blocking)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ github.run_id }}
+          exit-code: 0
+          format: table 
       
       - name: Docker meta
         id: docker_meta
@@ -33,18 +51,19 @@ jobs:
           flavor: |
             latest=false
           tags: |
-            type=raw,value=04
-            type=raw,value=latest,enable=${{ endsWith(github.ref, github.event.repository.default_branch) }}
-            type=ref,event=pr
-            type=ref,event=branch
-            type=semver,pattern={{version}}
+            type=raw,value=06
+            # comment these out on all but 04-add-metadata.yaml to avoid overwriting image tags
+            # type=raw,value=latest,enable=${{ endsWith(github.ref, github.event.repository.default_branch) }}
+            # type=ref,event=pr
+            # type=ref,event=branch
+            # type=semver,pattern={{version}}
       
       - name: Docker build
         uses: docker/build-push-action@v2
         with:
 #           push: ${{ github.event_name != 'pull_request' }}
 #           tags: ${{ secrets.DOCKERHUB_USERNAME }}/httpenv:02
-            push: false # false for this demo to prevent overwriting image tags of other examples
+            push: true # false for add comment scenario to prevent overwriting image tags of other examples
             tags: ${{ steps.docker_meta.outputs.tags }}
             labels: ${{ steps.docker_meta.outputs.labels }}
           
