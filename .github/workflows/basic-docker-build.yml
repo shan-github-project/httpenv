@@ -33,6 +33,42 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           
+      - name: Login to ghcr.io registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GIT_TOKEN }}
+      
+      - name: Build and Push to GHCR
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: ghcr.io/shan-github-project/httpenv:${{ github.run_id }}
+          target: test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+      - uses: AbsaOSS/k3d-action@v2
+        with:
+          cluster-name: "test-cluster-1"
+          args: >-
+            --agents 1
+            --no-lb
+            --k3s-arg "--no-deploy=traefik,servicelb,metrics-server@server:*"
+      
+      - name: Smoke test deployment in k3d Kubernetes
+        run: |
+          kubectl create secret docker-registry regcred \
+            --docker-server=https://ghcr.io \
+            --docker-username=${{ github.actor }} \
+            --docker-password=${{ secrets.GIT_TOKEN }}
+          export TESTING_IMAGE=ghcr.io/shan-github-project/httpenv:"$GITHUB_RUN_ID"
+          envsubst < manifests/deployment.yaml  | kubectl apply -f -
+          kubectl rollout status deployment myapp
+          kubectl exec deploy/myapp -- curl --fail localhost
+          
 #  commenting build and export and run trivy section as DOCKER FILE didn't have test stage as target         
       - name: Build and export to Docker
         uses: docker/build-push-action@v2
@@ -53,10 +89,10 @@ jobs:
 # for more advanced tests, use docker compose with `depends_on`
 # NOTE: GHA and other CIs can also run dependency containers on their own
 # GHA `services:` can do this if you're trying to avoid docker compose
-      - name: Test healthcheck in Docker Compose
-        run: |
-          export TESTING_IMAGE="${{ github.run_id }}"
-          docker compose -f docker-compose.test.yml up --exit-code-from sut
+#       - name: Test healthcheck in Docker Compose
+#         run: |
+#           export TESTING_IMAGE="${{ github.run_id }}"
+#           docker compose -f docker-compose.test.yml up --exit-code-from sut
       
 #       - name: Run Trivy for all CVEs (non-blocking)
 #         uses: aquasecurity/trivy-action@master
