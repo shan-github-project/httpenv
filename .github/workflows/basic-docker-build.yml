@@ -34,16 +34,16 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           
 #  commenting build and export and run trivy section as DOCKER FILE didn't have test stage as target         
-#       - name: Build and export to Docker
-#         uses: docker/build-push-action@v2
-#         with:
-#           push: false
-#           load: true # Export to Docker Engine rather than pushing to a registry
-#           tags: ${{ github.run_id }}
-#           target: test
-#           cache-from: type=gha
-#           cache-to: type=gha,mode=max
-#           platforms: linux/amd64
+      - name: Build and export to Docker
+        uses: docker/build-push-action@v2
+        with:
+          push: false
+          load: true # Export to Docker Engine rather than pushing to a registry
+          tags: ${{ github.run_id }}
+          target: test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
 
 # for simple tests (npm test, etc.) just run a local image in docker
       - name: Unit Testing in Docker
