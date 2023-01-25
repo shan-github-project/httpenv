@@ -26,7 +26,7 @@ jobs:
         id: docker_meta
         uses: docker/metadata-action@v3
         with:
-          images: ${{ secrets.DOCKERHUB_USERNAME }}/httpenv:02
+          images: zeeshan30/httpenv:02
           flavor: |
             latest=false
           tags: |
