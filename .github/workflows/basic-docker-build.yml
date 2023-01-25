@@ -67,7 +67,7 @@ jobs:
           export TESTING_IMAGE=ghcr.io/shan-github-project/httpenv:"$GITHUB_RUN_ID"
           envsubst < manifest/deployment.yml  | kubectl apply -f -
           kubectl rollout status deployment myapp
-          kubectl exec deploy/myapp -- curl --fail localhost
+          kubectl exec -it deploy/myapp – sh -- curl --fail localhost
           
 #  commenting build and export and run trivy section as DOCKER FILE didn't have test stage as target         
       - name: Build and export to Docker
