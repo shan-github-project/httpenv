@@ -49,6 +49,14 @@ jobs:
       - name: Unit Testing in Docker
         run: |
           docker run --rm ${{ github.run_id }} echo "run test commands here"
+        
+# for more advanced tests, use docker compose with `depends_on`
+# NOTE: GHA and other CIs can also run dependency containers on their own
+# GHA `services:` can do this if you're trying to avoid docker compose
+      - name: Test healthcheck in Docker Compose
+        run: |
+          export TESTING_IMAGE="${{ github.run_id }}"
+          docker compose -f docker-compose.test.yml up --exit-code-from sut
       
 #       - name: Run Trivy for all CVEs (non-blocking)
 #         uses: aquasecurity/trivy-action@master
@@ -82,7 +90,7 @@ jobs:
           flavor: |
             latest=false
           tags: |
-            type=raw,value=08
+            type=raw,value=09
             # comment these out on all but 04-add-metadata.yaml to avoid overwriting image tags
             # type=raw,value=latest,enable=${{ endsWith(github.ref, github.event.repository.default_branch) }}
             # type=ref,event=pr
